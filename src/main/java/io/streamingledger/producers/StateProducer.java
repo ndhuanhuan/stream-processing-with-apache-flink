@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static io.streamingledger.utils.StreamingUtils.closeProducer;
@@ -43,7 +44,7 @@ public class StateProducer {
             count += 1;
         }
 
-        logger.info("Total customers sent '{}'.", count);
+        logger.info("Total customers sent '{}'.", Optional.of(count));
 
         logger.info("Generating accounts information ...");
 
@@ -54,7 +55,7 @@ public class StateProducer {
             count += 1;
         }
 
-        logger.info("Total accounts sent '{}'.", count);
+        logger.info("Total accounts sent '{}'.", Optional.of(count));
         logger.info("Closing Producers ...");
         closeProducer(accountsProducer);
         closeProducer(customersProducer);
