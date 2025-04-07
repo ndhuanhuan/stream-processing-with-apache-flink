@@ -83,3 +83,24 @@ A session cluster is a long-lived cluster and it’s lifetime is not bound to th
 ### Application Cluster
 An application cluster only executes a job from one Flink application. The main method runs on the cluster, not on the client and the application jar along with the required dependencies (including Flink itself) can be pre-uploaded.
 This allows you to deploy a Flink application like any other application on Kubernetes easily and since the ResourceManager and Dispatcher are scoped within a single Flink Application it provides good resource isolation.
+
+# CH2 - Streams and Tables
+## Streaming SQL Semantics
+## Dynamic table
+These events yield changes, which result in the output table being continuously updated.
+This is called a Dynamic Table
+
+## Flink SQL Logical Components
+Flink consists of catalogs that hold metadata for databases, tables, functions, and views.
+A catalog can be non-persisted (In-memory catalog) or persistent backed by an external system like the PostgresCatalog, the PulsarCatalog, and the HiveCatalog.
+For In-memory catalogs, all metadata will be available only for the lifetime of the session.
+In contrast, catalogs like the PostgresCatalog enables users to connect the two systems and then Flink automatically references existing metadata by mapping them to its corresponding metadata.
+
+Within the catalogs, you create databases and tables within the databases.
+When creating a table its full table name identifier is: <catalog_name>.<database_name>.<table_name> and when a catalog and/or database is not specified the default ones are used.
+
+
+Run command:
+```
+docker exec -it jobmanager ./bin/sql-client.sh
+```
