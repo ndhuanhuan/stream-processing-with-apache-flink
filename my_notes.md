@@ -284,7 +284,22 @@ WHERE rowNum = 1;
 ```
 
 # Chapter UDF
+Fix macbook java env first:
+```
+export JAVA_HOME=$(/usr/libexec/java_home -v 11)
+```
+
 Go to root of project and run
 ```
 mvn clean package
 ```
+
+This will package your application and you should see a spf-0.1.0.jar file under the target folder.
+
+Copy the file into the jars folder along with the connector jars folder located at the root of your project so that is is included it into our flink image.
+
+Note: You can delete the previous images to make sure the images are created with all the jars in place.
+
+If you run docker compose up you should see your containers running.
+
+If you open a terminal in the JobManager container `docker exec -it jobmanager bash` you should see spf-0.1.0.jar inside the jars folder.
