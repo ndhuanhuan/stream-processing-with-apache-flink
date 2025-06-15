@@ -4,12 +4,18 @@ To start the project, run
 docker compose up
 ```
 
+To clean the data
+```
+docker compose down -v
+```
+
 Then create 5 topics
 ```
 sh redpanda-setup.sh
 ```
 
 Flink UI: http://localhost:8081/#/overview
+Redpanda UI: http://localhost:8080/
 
 The last thing we need is data on those topics.
 
@@ -275,4 +281,10 @@ FROM (
                 ROW_NUMBER() OVER (PARTITION BY transactionId ORDER BY eventTime_ltz) AS rowNum
          FROM transactions)
 WHERE rowNum = 1;
+```
+
+# Chapter UDF
+Go to root of project and run
+```
+mvn clean package
 ```
