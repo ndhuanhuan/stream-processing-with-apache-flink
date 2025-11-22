@@ -228,6 +228,31 @@ FROM transactions
 WHERE amount > 180000
     and type = 'Credit';
 
+SELECT
+    transactionId,
+    eventTime_ltz,
+    type,
+    amount,
+    balance
+FROM transactions
+WHERE amount > 180000
+    and type = 'Credit'
+ORDER BY eventTime_ltz;
+
+CREATE TEMPORARY VIEW temp_premium AS
+SELECT
+    transactionId,
+    eventTime_ltz,
+    type,
+    amount,
+    balance
+FROM transactions
+WHERE amount > 180000
+  and type = 'Credit';
+
+SELECT * FROM temp_premium;
+
+SHOW VIEWS;
 
 SELECT customerId, COUNT(transactionId) as txnPerCustomer
 FROM transactions
@@ -250,16 +275,6 @@ SELECT
 FROM transactions
 ORDER BY eventTime_ltz;
 
-CREATE TEMPORARY VIEW temp_premium AS
-SELECT
-    transactionId,
-    eventTime_ltz,
-    type,
-    amount,
-    balance
-FROM transactions
-WHERE amount > 180000
-  and type = 'Credit';
 
 
 SELECT
