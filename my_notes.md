@@ -294,6 +294,18 @@ Go to root of project and run
 mvn clean package
 ```
 
+```
+docker compose up
+```
+
+
+To deploy a jar
+```
+docker exec -it jobmanager ./bin/flink run \
+--class io.streamingledger.datastream.BufferingStream \
+jars/spf-0.1.0.jar
+```
+
 This will package your application and you should see a spf-0.1.0.jar file under the target folder.
 
 Copy the file into the jars folder along with the connector jars folder located at the root of your project so that is is included it into our flink image.
