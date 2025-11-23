@@ -1,6 +1,9 @@
 package io.streamingledger.sql;
 
 public class Queries {
+//         Summary:
+// Inside Docker containers: Use redpanda:9092 (internal network)
+// From your local Mac: Use localhost:19092 (external port mapping)
     public static final String CREATE_TXN_TABLE = "CREATE TABLE transactions (\n" +
             "    transactionId      STRING,\n" +
             "    accountId          STRING,\n" +
@@ -16,7 +19,7 @@ public class Queries {
             ") WITH (\n" +
             "    'connector' = 'kafka',\n" +
             "    'topic' = 'transactions',\n" +
-            "    'properties.bootstrap.servers' = 'localhost:9092',\n" +
+            "    'properties.bootstrap.servers' = 'localhost:19092',\n" +
             "    'properties.group.id' = 'group.transactions',\n" +
             "    'format' = 'json',\n" +
             "    'scan.startup.mode' = 'earliest-offset'\n" +

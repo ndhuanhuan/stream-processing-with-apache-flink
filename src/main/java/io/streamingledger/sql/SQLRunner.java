@@ -5,15 +5,17 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 public class SQLRunner {
-    public static void main(String[] args) {
-        Configuration configuration = new Configuration();
+        public static void main(String[] args) {
+                Configuration configuration = new Configuration();
+                // Set REST port to 8082 to avoid conflict with running Flink cluster
+                configuration.setInteger("rest.port", 8082);
 
-        var environment = StreamExecutionEnvironment
-                .createLocalEnvironmentWithWebUI(configuration);
+                var environment = StreamExecutionEnvironment
+                                .createLocalEnvironmentWithWebUI(configuration);
 
-        environment.setParallelism(5);
+                environment.setParallelism(5);
 
-        var tableEnvironment = StreamTableEnvironment.create(environment);
+                var tableEnvironment = StreamTableEnvironment.create(environment);
 
         // Run some SQL queries to check the existing Catalogs, Databases and Tables
         tableEnvironment
