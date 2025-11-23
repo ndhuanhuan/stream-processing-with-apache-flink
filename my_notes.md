@@ -264,7 +264,7 @@ FROM (
          FROM transactions
          GROUP BY customerId
      ) as e
-WHERE txnPerCustomer > 300;
+WHERE txnPerCustomer > 500;
 
 SELECT
     transactionId,
@@ -290,6 +290,10 @@ WHERE amount > 180000
 
 
 -- Deduplication
+-- This query basically tells Flink - for every transactionsId (that should be unique) order them by their event time and assign them a number.
+-- For example, in cases we have duplicates we will have two row numbers of 1 and 2 for the same transaction id, and from those two we are only interested in keeping the first one.
+
+
 SELECT transactionId, rowNum
 FROM (
          SELECT *,
