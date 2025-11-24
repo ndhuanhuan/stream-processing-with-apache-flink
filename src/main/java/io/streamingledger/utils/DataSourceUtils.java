@@ -19,14 +19,14 @@ public class DataSourceUtils {
 
     public static Transaction toTransaction(String line) {
         String[] tokens = line.split(",");
-//        var eventTime = Timestamp.valueOf(tokens[7].replace("T", " "));
+        var eventTime = Timestamp.valueOf(tokens[7].replace("T", " "));
 
         return new Transaction(
                 tokens[0],
                 tokens[1],
                 tokens[8],
-                System.currentTimeMillis(),
-                new Timestamp(System.currentTimeMillis()).toString(),
+                eventTime.getTime(), // System.currentTimeMillis(),
+                eventTime.toString(), // new Timestamp(System.currentTimeMillis()).toString(),
                 tokens[2],
                 tokens[3],
                 parseDouble(tokens[5]),

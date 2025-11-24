@@ -302,6 +302,56 @@ FROM (
 WHERE rowNum = 1;
 ```
 
+# Chapter watermark and window
+```
+SET sql-client.execution.result-mode = tableau;
+
+CREATE TABLE transactions (
+    transactionId      STRING,
+    accountId          STRING,
+    customerId         STRING,
+    eventTime          BIGINT,
+    eventTime_ltz AS TO_TIMESTAMP_LTZ(eventTime, 3),
+    eventTimeFormatted STRING,
+    type               STRING,
+    operation          STRING,
+    amount             DOUBLE,
+    balance            DOUBLE,
+        WATERMARK FOR eventTime_ltz AS eventTime_ltz
+) WITH (
+    'connector' = 'kafka',
+    'topic' = 'transactions',
+    'properties.bootstrap.servers' = 'redpanda:9092',
+    'properties.group.id' = 'group.transactions',
+    'format' = 'json',
+    'scan.startup.mode' = 'earliest-offset'
+);
+
+
+SELECT
+    transactionId,
+    eventTime_ltz
+FROM transactions
+LIMIT 10;
+
+
+-- How many transactions per day?
+-- This query uses a TUMBLE window to count transactions in non-overlapping 1-day intervals
+-- TUMBLE creates fixed-size windows (tumbling windows) that don't overlap
+-- DESCRIPTOR(eventTime_ltz) specifies the event time column for windowing
+-- window_start and window_end are automatically generated to show each window's time boundaries
+-- Each window produces one result row showing the count of transactions for that day
+SELECT
+    window_start AS windowStart,
+    window_end as windowEnd,
+    COUNT(transactionId) as txnCount
+FROM TABLE(
+        TUMBLE(TABLE transactions, DESCRIPTOR(eventTime_ltz), INTERVAL '1' DAY)
+    )
+GROUP BY window_start, window_end;
+```
+
+
 # Chapter UDF
 Fix macbook java env first:
 ```
