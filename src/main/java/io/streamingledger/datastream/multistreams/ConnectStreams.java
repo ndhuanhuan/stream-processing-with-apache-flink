@@ -16,8 +16,12 @@ import java.time.Duration;
 
 public class ConnectStreams {
     public static void main(String[] args) throws Exception {
+        Configuration configuration = new Configuration();
+        // Set REST port to 8082 to avoid conflict with Docker Flink cluster on 8081
+        configuration.setInteger("rest.port", 8082);
+        
         var environment = StreamExecutionEnvironment
-                .createLocalEnvironmentWithWebUI(new Configuration());
+                .createLocalEnvironmentWithWebUI(configuration);
 
         environment.setParallelism(1);
 
