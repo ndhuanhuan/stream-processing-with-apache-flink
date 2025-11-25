@@ -349,7 +349,67 @@ FROM TABLE(
         TUMBLE(TABLE transactions, DESCRIPTOR(eventTime_ltz), INTERVAL '1' DAY)
     )
 GROUP BY window_start, window_end;
+
+
+-- Sliding window -- 
+SELECT
+    window_start AS windowStart,
+    window_end as windowEnd,
+    COUNT(transactionId) as txnCount
+FROM TABLE(
+        HOP(TABLE transactions, DESCRIPTOR(eventTime_ltz), INTERVAL '2' HOUR, INTERVAL '1' DAY)
+    )
+GROUP BY window_start, window_end;
+
+-- A Cumulative Window is similar to a Sliding Window with the difference that the window doesn’t slide, but the starting bound stays the same until the window reaches the specified interval.
+-- More specifically let’s say we want one day window, with a 2 hour interval.
+The window will wait for the 1 day to pass, but will also be updating and firing results every two hours since the window start.
+
+SELECT
+    window_start AS windowStart,
+    window_end as windowEnd,
+    window_time AS windowTime,
+    COUNT(transactionId) as txnCount
+FROM TABLE(
+        CUMULATE(TABLE transactions, DESCRIPTOR(eventTime_ltz), INTERVAL '2' HOUR, INTERVAL '1' DAY)
+    )
+GROUP BY window_start, window_end, window_time;
+
+-- Session Window
+-- Top-3 Customers per week (max # of transactions)
+-- This is a Top-N pattern query that finds the 3 customers with most transactions in each 7-day week
+-- Despite the "Session Window" comment, this actually uses TUMBLE window
+-- 
+-- How it works (3 nested queries):
+-- 1. Innermost query - Aggregation:
+--    - Creates 7-day tumbling windows
+--    - Groups by window AND customerId
+--    - Counts transactions per customer per week
+-- 2. Middle query - Ranking:
+--    - Assigns a rank to each customer within each window using ROW_NUMBER()
+--    - PARTITION BY window_start, window_end ensures ranking restarts for each week
+--    - ORDER BY txnCount DESC ranks by transaction count (highest first)
+-- 3. Outermost query - Filtering:
+--    - WHERE rowNum <= 3 keeps only the top 3 ranked customers per week
+--
+-- Result: For each 7-day period, you get the 3 customers who had the most transactions
+SELECT *
+FROM (
+         SELECT *, ROW_NUMBER() OVER (PARTITION BY window_start, window_end ORDER BY txnCount DESC) as rowNum
+         FROM (
+                  SELECT
+                      customerId,
+                      window_start,
+                      window_end,
+                      COUNT(transactionId) as txnCount
+                  FROM TABLE(TUMBLE(TABLE transactions, DESCRIPTOR(eventTime_ltz), INTERVAL '7' DAY))
+                  GROUP BY window_start, window_end, customerId
+              )
+     ) WHERE rowNum <= 3;
 ```
+All the events flowing through Flink pipelines and being processed are considered StreamElements.
+These StreamElements can be either StreamRecords (i.e every event that is being processed) or a Watermark.
+A watermark is nothing more than a special record injected into the stream that carries a timestamp (t).
 
 
 # Chapter UDF
