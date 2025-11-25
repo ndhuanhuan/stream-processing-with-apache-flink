@@ -428,6 +428,143 @@ GROUP BY window_start, window_end;
 ```
 
 # Chapter Streaming Joins
+## Regular Join
+The join result is updated whenever records of either input table are inserted, deleted, or updated
+Regular joins work well if both input tables are not growing too large.
+If the tables start to grow too large you need to account for that and have a strategy to expire it.
+
+```
+SET sql-client.execution.result-mode = tableau;
+
+CREATE TABLE transactions (
+    transactionId      STRING,
+    accountId          STRING,
+    customerId         STRING,
+    eventTime          BIGINT,
+    eventTime_ltz AS TO_TIMESTAMP_LTZ(eventTime, 3),
+    eventTimeFormatted STRING,
+    type               STRING,
+    operation          STRING,
+    amount             DOUBLE,
+    balance            DOUBLE,
+        WATERMARK FOR eventTime_ltz AS eventTime_ltz
+) WITH (
+    'connector' = 'kafka',
+    'topic' = 'transactions',
+    'properties.bootstrap.servers' = 'redpanda:9092',
+    'properties.group.id' = 'group.transactions',
+    'format' = 'json',
+    'scan.startup.mode' = 'earliest-offset'
+);
+
+CREATE TABLE customers (
+    customerId STRING,
+    sex STRING,
+    social STRING,
+    fullName STRING,
+    phone STRING,
+    email STRING,
+    address1 STRING,
+    address2 STRING,
+    city STRING,
+    state STRING,
+    zipcode STRING,
+    districtId STRING,
+    birthDate STRING,
+    updateTime BIGINT,
+    eventTime_ltz AS TO_TIMESTAMP_LTZ(updateTime, 3),
+        WATERMARK FOR eventTime_ltz AS eventTime_ltz,
+            PRIMARY KEY (customerId) NOT ENFORCED
+) WITH (
+    'connector' = 'upsert-kafka',
+    'topic' = 'customers',
+    'properties.bootstrap.servers' = 'redpanda:9092',
+    'key.format' = 'raw',
+    'value.format' = 'json',
+    'properties.group.id' = 'group.customers'
+);
+
+CREATE TEMPORARY VIEW txnWithCustomerInfo AS
+SELECT
+    transactionId,
+    t.eventTime_ltz,
+    type,
+    amount,
+    balance,
+    fullName,
+    email,
+    address1
+FROM transactions AS t
+         JOIN customers AS c
+              ON t.customerId = c.customerId;
+
+CREATE TEMPORARY VIEW txnWithCustomerInfoDedup AS
+ SELECT *
+ FROM (
+          SELECT *,
+                 ROW_NUMBER() OVER (PARTITION BY transactionId ORDER BY eventTime_ltz) AS rowNum
+          FROM txnWithCustomerInfo)
+WHERE rowNum = 1;
+```
+
+## Interval Joins
+An interval join allows joining records of two append-only tables such that the time attributes of joined records are not more than a specified window interval apart. Tables must be append-only - rows can’t be updated.
+```
+CREATE TABLE debits (
+    transactionId      STRING,
+    accountId          STRING,
+    customerId         STRING,
+    eventTime          BIGINT,
+    eventTime_ltz AS TO_TIMESTAMP_LTZ(eventTime, 3),
+    eventTimeFormatted STRING,
+    type               STRING,
+    operation          STRING,
+    amount             DOUBLE,
+    balance            DOUBLE,
+        WATERMARK FOR eventTime_ltz AS eventTime_ltz
+) WITH (
+    'connector' = 'kafka',
+    'topic' = 'transactions.debits',
+    'properties.bootstrap.servers' = 'redpanda:9092',
+    'properties.group.id' = 'group.transactions.debits',
+    'format' = 'json',
+    'scan.startup.mode' = 'earliest-offset'
+);
+
+
+CREATE TABLE credits (
+    transactionId      STRING,
+    accountId          STRING,
+    customerId         STRING,
+    eventTime          BIGINT,
+    eventTime_ltz AS TO_TIMESTAMP_LTZ(eventTime, 3),
+    eventTimeFormatted STRING,
+    type               STRING,
+    operation          STRING,
+    amount             DOUBLE,
+    balance            DOUBLE,
+        WATERMARK FOR eventTime_ltz AS eventTime_ltz
+) WITH (
+    'connector' = 'kafka',
+    'topic' = 'transactions.credits',
+    'properties.bootstrap.servers' = 'redpanda:9092',
+    'properties.group.id' = 'group.transactions.credits',
+    'format' = 'json',
+    'scan.startup.mode' = 'earliest-offset'
+);
+
+SELECT
+    d.transactionId AS debitId,
+    d.customerId    AS debitCid,
+    d.eventTime_ltz AS debitEventTime,
+    c.transactionId AS creditId,
+    c.customerId    AS creditCid,
+    c.eventTime_ltz AS creditEventTime
+FROM debits d, credits c
+WHERE d.customerId = c.customerId
+  AND d.eventTime_ltz BETWEEN c.eventTime_ltz - INTERVAL '1' HOUR AND c.eventTime_ltz;
+```
+
 
 # Chapter UDF
 Fix macbook java env first:

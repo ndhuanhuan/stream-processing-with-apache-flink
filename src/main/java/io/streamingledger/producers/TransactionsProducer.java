@@ -18,11 +18,11 @@ import static io.streamingledger.utils.StreamingUtils.closeProducer;
 public class TransactionsProducer {
     private static final Logger logger
             = LoggerFactory.getLogger(TransactionsProducer.class);
-    private static final boolean slitTransactions = false;
+    private static final boolean slitTransactions = true;
 
     public static void main(String[] args) throws IOException, InterruptedException {
         Stream<Transaction> transactions = DataSourceUtils
-                .loadDataFile("/data/transactions-small.csv")
+                .loadDataFile("/data/transactions.csv")
                 .map(DataSourceUtils::toTransaction);
 
         var properties = AppConfig.buildProducerProps();
