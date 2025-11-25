@@ -408,9 +408,26 @@ FROM (
      ) WHERE rowNum <= 3;
 ```
 All the events flowing through Flink pipelines and being processed are considered StreamElements.
-These StreamElements can be either StreamRecords (i.e every event that is being processed) or a Watermark.
+These StreamElements can be either `StreamRecords` (i.e every event that is being processed) or a `Watermark`.
 A watermark is nothing more than a special record injected into the stream that carries a timestamp (t).
 
+Flink allows you to achieve this by using a `WatermarkStrategy`.
+A WatermarkStrategy informs Flink how to extract an event’s timestamp and assign watermarks.
+
+The current watermark for a task with multiple inputs is the minimum watermark from all of its input
+
+```
+SELECT
+    window_start AS windowStart,
+    window_end as windowEnd,
+    COUNT(transactionId) as txnCount
+FROM TABLE(
+        TUMBLE(TABLE transactions, DESCRIPTOR(eventTime_ltz), INTERVAL '7' DAY)
+    )
+GROUP BY window_start, window_end;
+```
+
+# Chapter Streaming Joins
 
 # Chapter UDF
 Fix macbook java env first:

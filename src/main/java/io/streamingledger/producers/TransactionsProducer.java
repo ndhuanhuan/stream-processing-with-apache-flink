@@ -22,7 +22,7 @@ public class TransactionsProducer {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         Stream<Transaction> transactions = DataSourceUtils
-                .loadDataFile("/data/transactions.csv")
+                .loadDataFile("/data/transactions-small.csv")
                 .map(DataSourceUtils::toTransaction);
 
         var properties = AppConfig.buildProducerProps();

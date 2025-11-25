@@ -1,0 +1,2 @@
+trans_id,account_id,type,operation,amount,balance,k_symbol,fulldatewithtime,customer_id
+T00871632,A00002970,Credit,Credit in Cash,400,400,,2013-01-30T11:08:59,C00003586
