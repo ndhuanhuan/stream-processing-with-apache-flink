@@ -159,6 +159,10 @@ CREATE TABLE accounts (
     'password' = 'postgres'
 );
 
+SELECT
+    accountId,
+    districtId
+FROM accounts LIMIT 10;
 
 SELECT
     transactionId,

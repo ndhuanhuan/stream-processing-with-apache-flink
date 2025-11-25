@@ -565,6 +565,52 @@ WHERE d.customerId = c.customerId
   AND d.eventTime_ltz BETWEEN c.eventTime_ltz - INTERVAL '1' HOUR AND c.eventTime_ltz;
 ```
 
+## Temporal Joins
+A temporal table gives access to its history.
+Each record of an append-only table is joined with the version of the temporal table that corresponds to that record’s timestamp.
+Temporal tables give access to versions of an append-only history table:
+Must have a primary key, and
+Updates that are versioned by a time attribute
+Requires an equality predicate on the primary key
+As time passes, versions no longer needed are removed from the state.
+Temporal joins are extremely useful we using streaming storage layers as the source, like Redpanda, Apache Kafka, or Pulsar.
+A common streaming use case is having an append-only stream and also other changelog streams.
+Changelog streams are backed by compacted topics - typically used for storing some kind of state.
+You are only interested in the latest value per key, in order to implement use cases like data enrichment
+```
+SET 'table.exec.source.idle-timeout'='100';
+SELECT
+    transactionId,
+    t.eventTime_ltz,
+    TO_TIMESTAMP_LTZ(updateTime, 3) as updateTime,
+    type,
+    amount,
+    balance,
+    fullName,
+    email,
+    address1
+FROM transactions AS t
+    JOIN customers FOR SYSTEM_TIME AS OF t.eventTime_ltz AS c
+ON t.customerId = c.customerId;
+```
+It’s similar to a regular join, with the difference that you use the FOR SYSTEM_TIME AS OF syntax in order to create versions.
+
+## Lookup Joins
+```
+SELECT
+    transactionId,
+    t.accountId,
+    t.eventTime_ltz,
+    TO_TIMESTAMP_LTZ(updateTime, 3) AS updateTime,
+    type,
+    amount,
+    balance,
+    districtId,
+    frequency
+FROM transactions AS t
+         JOIN accounts FOR SYSTEM_TIME AS OF t.eventTime_ltz AS a
+              ON t.accountId = a.accountId;
+```
 
 # Chapter UDF
 Fix macbook java env first:
@@ -579,7 +625,10 @@ mvn clean package
 
 ```
 docker compose up
+
+docker exec -it jobmanager bash
 ```
+
 
 
 To deploy a jar
@@ -598,3 +647,26 @@ Note: You can delete the previous images to make sure the images are created wit
 If you run docker compose up you should see your containers running.
 
 If you open a terminal in the JobManager container `docker exec -it jobmanager bash` you should see spf-0.1.0.jar inside the jars folder.
+
+### Register UDF
+```shell
+CREATE FUNCTION maskfn  AS 'io.streamingledger.udfs.MaskingFn'      LANGUAGE JAVA USING JAR '/opt/flink/jars/spf-0.1.0.jar';
+CREATE FUNCTION splitfn AS 'io.streamingledger.udfs.SplitFn'        LANGUAGE JAVA USING JAR '/opt/flink/jars/spf-0.1.0.jar';
+CREATE FUNCTION lookup  AS 'io.streamingledger.udfs.AsyncLookupFn'  LANGUAGE JAVA USING JAR '/opt/flink/jars/spf-0.1.0.jar';
+
+CREATE TEMPORARY VIEW sample AS
+SELECT * 
+FROM transactions 
+LIMIT 10;
+
+SELECT transactionId, maskfn(UUID()) AS maskedCN FROM transactions;
+SELECT * FROM transactions, LATERAL TABLE(splitfn(operation));
+
+SELECT 
+  transactionId,
+  serviceResponse, 
+  responseTime 
+FROM sample, LATERAL TABLE(lookup(transactionId));
+```
+
+# Chapter The DataStream API
