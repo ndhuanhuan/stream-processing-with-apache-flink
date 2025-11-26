@@ -53,7 +53,7 @@ public class BufferingStream {
 
         // 2. Initialize Customer Source
         KafkaSource<Customer> customerSource = KafkaSource.<Customer>builder()
-                .setBootstrapServers(AppConfig.BOOTSTRAP_URL_DOCKER)
+                .setBootstrapServers(AppConfig.BOOTSTRAP_URL)
                 .setTopics(AppConfig.CUSTOMERS_TOPIC)
                 .setGroupId("group.finance.customers")
                 .setStartingOffsets(OffsetsInitializer.earliest())
@@ -68,7 +68,7 @@ public class BufferingStream {
 
         // 3. Initialize Transactions Source
         KafkaSource<Transaction> txnSource = KafkaSource.<Transaction>builder()
-                .setBootstrapServers(AppConfig.BOOTSTRAP_URL_DOCKER)
+                .setBootstrapServers(AppConfig.BOOTSTRAP_URL)
                 .setTopics(AppConfig.TRANSACTIONS_TOPIC)
                 .setGroupId("group.finance.transactions")
                 .setStartingOffsets(OffsetsInitializer.earliest())

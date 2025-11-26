@@ -670,3 +670,10 @@ FROM sample, LATERAL TABLE(lookup(transactionId));
 ```
 
 # Chapter The DataStream API
+
+# Chapter Fault Tolerence
+```
+docker exec -it jobmanager ./bin/flink run --class io.streamingledger.datastream.BufferingStream jars/spf-0.1.0.jar
+
+docker restart taskmanager1 && docker restart taskmanager2
+```
